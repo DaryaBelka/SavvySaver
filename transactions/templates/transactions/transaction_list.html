@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction List</title>
+ 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    
+    {% load static %} 
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}"> 
+</head>
+
+<body>
+    <header class="App-header">
+        <div class="logo">
+            <img src="{% static 'images/logo.png' %}" alt="SavvySaver Logo">
+            <h1>SavvySaver</h1>
+        </div>
+        <nav class="nav">
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li class="active"><a href="{% url 'transaction_list' %}">Transactions</a></li> 
+                <li><a href="#">Reports</a></li>
+                <li><a href="#">Advice</a></li>
+                <li><a href="#">Login</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <h1>Transaction List</h1>
+        <a href="{% url 'create_transaction' %}">Create New Transaction</a>
+
+        <h2>Total Amount: {{ total_amount|floatformat:2 }} </h2> 
+
+        <h2>Filter by category:</h2>
+        <ul>
+            <li><a href="?category=all">All</a></li>
+            <li><a href="?category=przelewy">Przelewy</a></li>
+            <li><a href="?category=spozywcze">Spożywcze</a></li>
+            <li><a href="?category=zakupy">Zakupy</a></li>
+            <li><a href="?category=zdrowie">Zdrowie</a></li>
+            <li><a href="?category=restauracje">Restauracje</a></li>
+            <li><a href="?category=transport">Transport</a></li>
+            <li><a href="?category=ogolne">Ogólne</a></li>
+            <li><a href="?category=media">Media</a></li>
+            <li><a href="?category=gotowka">Gotówka</a></li>
+        </ul>
+
+        <h2>Filter by date:</h2>
+        <form method="get" action="{% url 'transaction_list' %}">
+            <input type="text" id="date_range" placeholder="Select date range" required>
+            <input type="hidden" name="start_date" value="">
+            <input type="hidden" name="end_date" value="">
+            <button type="submit">Filter</button>
+        </form>
+
+        <script>
+            flatpickr("#date_range", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                onChange: function (selectedDates, dateStr) {
+                    const dates = dateStr.split(" to ");
+                    document.querySelector('input[name="start_date"]').value = dates[0] || '';
+                    document.querySelector('input[name="end_date"]').value = dates[1] || '';
+                }
+            });
+        </script>
+
+        <ul>
+            {% if transactions %}
+                {% for transaction in transactions %}
+                <li>
+                    {{ transaction.title }} - {{ transaction.amount|floatformat:2 }} - {{ transaction.date|date:"F j, Y" }} - {{ transaction.category }}
+                    <a href="{% url 'edit_transaction' transaction.id %}">Edit</a>
+                    <a href="{% url 'delete_transaction' transaction.id %}">Delete</a>
+                </li>
+                {% endfor %}
+            {% else %}
+                <li>No transactions found.</li>
+            {% endif %}
+        </ul>
+    </main>
+
+    <script src="{% static 'js/script.js' %}"></script>
+</body>
+
+</html>

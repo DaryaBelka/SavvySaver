@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Transaction</title>
+    {% load static %} 
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}"> 
+</head>
+<body>
+    <header class="App-header">
+        <div class="logo">
+            <img src="{% static 'images/logo.png' %}" alt="SavvySaver Logo">
+            <h1>SavvySaver</h1>
+        </div>
+        <nav class="nav">
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li class="active"><a href="{% url 'transaction_list' %}">Transactions</a></li> 
+                <li><a href="#">Reports</a></li>
+                <li><a href="#">Advice</a></li>
+                <li><a href="#">Login</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <h1>Create New Transaction</h1>
+
+        <h2>Upload a file</h2>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="file" name="file" accept=".csv, .xlsx" required> 
+            <button type="submit">Upload</button>
+        </form>
+
+        <h2>Enter manually</h2>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            
+            <button type="submit">Create Transaction</button>
+        </form>
+        
+        {% if form.errors %} 
+            <div class="error">
+                <strong>Please correct the following errors:</strong>
+                <ul>
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    </main>
+    
+    <script src="{% static 'js/script.js' %}"></script>  
+</body>
+</html>

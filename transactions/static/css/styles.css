@@ -1,0 +1,89 @@
+body {
+  font-family: 'Open Sans', sans-serif;
+}
+
+.App-header {
+  background-color: #101044;
+  padding: 5px 40px;
+  color: #D9D9D9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+}
+
+.logo img {
+  width: 50px;
+  height: 50px;
+  margin-right: 10px;
+}
+
+.logo h1 {
+  font-weight: normal;
+  font-size: 25px;
+}
+
+.nav ul {
+  list-style: none;
+  display: flex;
+  gap: 25px;
+  margin: 0;
+  padding: 0;
+}
+
+.nav li {
+  cursor: pointer;
+  font-size: 17px;
+  color: #D9D9D9; 
+}
+
+.nav li a {
+  text-decoration: none; 
+  color: inherit; 
+  transition: color 0.3s;
+}
+
+.nav li:hover a {
+  color: #94415d; 
+}
+
+.nav li.active a {
+  color: #94415d;
+  font-weight: bold;
+}
+
+h2 {
+  color: #101044;
+  font-size: 45px;
+  margin: 12% 0 0 13%; /* Отменено margin-top и добавлено 0 для остальных */
+}
+
+h3 {
+  color: #101044;
+  font-style: italic;
+  font-weight: 200;
+  font-size: 19px;
+  margin-left: 18%;
+}
+
+.get-started-btn {
+  margin-top: 1px;
+  padding: 10px 60px;
+  background-color: #101044;
+  color: #D9D9D9;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 18px;
+  transition: background-color 0.3s ease;
+  margin-left: 23%;
+}
+
+.get-started-btn:hover {
+  background-color: #6b2f41;
+  transform: scale(1.05);
+}
