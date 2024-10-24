@@ -78,4 +78,4 @@ def handle_uploaded_file(uploaded_file):
             raise NotImplementedError("CSV file processing is under development.")
 
 def index(request):
-    return render(request, 'transactions/index.html')
+    return render(request, 'index.html')
