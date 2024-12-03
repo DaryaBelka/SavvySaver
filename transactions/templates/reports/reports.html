@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Стили для уменьшения размера графиков */
+        canvas {
+            max-width: 600px; /* Максимальная ширина графика */
+            max-height: 300px; /* Максимальная высота графика */
+            width: 100%; /* Адаптивная ширина */
+            height: auto; /* Автоматическая высота */
+        }
+
+        /* Дополнительные стили для улучшения внешнего вида */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        header {
+            margin-bottom: 20px;
+        }
+        h2 {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Reports</h1>
+        <nav>
+            <ul>
+                <li><a href="{% url 'index' %}">Home</a></li>
+                <li><a href="{% url 'transaction_list' %}">Transactions</a></li>
+                <li class="active"><a href="{% url 'reports' %}">Reports</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <h2>Expenses by Category</h2>
+    <canvas id="categoryChart"></canvas>
+
+    <h2>Monthly Trends</h2>
+    <canvas id="monthlyChart"></canvas>
+
+    <script>
+        const categoryData = JSON.parse('{{ category_data|escapejs }}');
+        const monthlyData = JSON.parse('{{ monthly_data|escapejs }}');
+
+        const categoryLabels = categoryData.map(item => item.category);
+        const categoryAmounts = categoryData.map(item => item.total_amount);
+
+        const monthlyLabels = monthlyData.map(item => item.month);
+        const monthlyAmounts = monthlyData.map(item => item.total_amount);
+
+        const ctx1 = document.getElementById('categoryChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'pie',
+            data: {
+                labels: categoryLabels,
+                datasets: [{
+                    label: 'Expenses by Category',
+                    data: categoryAmounts,
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false // Позволяет изменять размер без изменения пропорций
+            }
+        });
+
+        const ctx2 = document.getElementById('monthlyChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: monthlyLabels,
+                datasets: [{
+                    label: 'Monthly Expenses',
+                    data: monthlyAmounts,
+                    borderColor: '#36A2EB',
+                    fill: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false // Позволяет изменять размер без изменения пропорций
+            }
+        });
+    </script>
+</body>
+</html> 

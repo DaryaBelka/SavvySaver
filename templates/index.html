@@ -21,7 +21,7 @@
             <ul>
                 <li class="active"><a href="{% url 'index' %}">Home</a></li>
                 <li><a href="{% url 'transaction_list' %}">Transactions</a></li>
-                <li><a href="#">Reports</a></li>
+                <li><a href="{% url 'reports' %}">Reports</a></li>
                 <li><a href="#">Advice</a></li>
 
                 {% if user.is_authenticated %}
