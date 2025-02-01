@@ -1,12 +1,13 @@
-import csv
 import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.files.storage import FileSystemStorage
-from .models import Transaction
 from .forms import TransactionForm  
+from itertools import accumulate
+from datetime import datetime
 from django.db.models import Sum
-from django.db.models.functions import TruncMonth, Trunc
+from django.db.models.functions import Trunc
 from django.contrib.auth.decorators import login_required
+from .models import Transaction
 
 @login_required
 def transaction_list(request):
@@ -14,7 +15,6 @@ def transaction_list(request):
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
 
-    # Фильтруем транзакции по текущему пользователю
     transactions = Transaction.objects.filter(user=request.user)
 
     if category and category != "all":
@@ -40,14 +40,14 @@ def create_transaction(request):
     if request.method == 'POST':
         if 'file' in request.FILES:
             uploaded_file = request.FILES['file']
-            handle_uploaded_file(uploaded_file, request.user)  # Передаем пользователя
+            handle_uploaded_file(uploaded_file, request.user)  
             return redirect('transaction_list')
         else:
             form = TransactionForm(request.POST)
             if form.is_valid():
-                transaction = form.save(commit=False)  # Не сохраняем еще в БД
-                transaction.user = request.user  # Устанавливаем текущего пользователя
-                transaction.save()  # Теперь сохраняем транзакцию с пользователем
+                transaction = form.save(commit=False)  
+                transaction.user = request.user  
+                transaction.save()  
                 return redirect('transaction_list')
 
     else:
@@ -57,7 +57,7 @@ def create_transaction(request):
 
 @login_required
 def edit_transaction(request, id):
-    transaction = get_object_or_404(Transaction, id=id, user=request.user)  # Фильтр по пользователю
+    transaction = get_object_or_404(Transaction, id=id, user=request.user)  
     if request.method == 'POST':
         form = TransactionForm(request.POST, instance=transaction)
         if form.is_valid():
@@ -70,7 +70,7 @@ def edit_transaction(request, id):
 
 @login_required
 def delete_transaction(request, id):
-    transaction = get_object_or_404(Transaction, id=id, user=request.user)  # Фильтр по пользователю
+    transaction = get_object_or_404(Transaction, id=id, user=request.user)
     if request.method == 'POST':
         transaction.delete()
         return redirect('transaction_list')
@@ -90,32 +90,38 @@ def handle_uploaded_file(uploaded_file):
 
 @login_required
 def reports_view(request):
-    # Aggregate by category for pie chart
+    current_month = datetime.now().month
+    current_year = datetime.now().year
+
+    monthly_summary = (
+        Transaction.objects
+        .filter(user=request.user, date__month=current_month, date__year=current_year)
+        .annotate(day=Trunc('date', 'day'))
+        .values('day')
+        .annotate(total_amount=Sum('amount'))
+        .order_by('day')
+    )
+    monthly_data = list(monthly_summary)
+
+    cumulative_amounts = list(accumulate(item['total_amount'] for item in monthly_data))
+    for i, amount in enumerate(cumulative_amounts):
+        monthly_data[i]['cumulative_total'] = amount
+
     category_summary = (
         Transaction.objects
-        .filter(user=request.user)  # Фильтр по пользователю
+        .filter(user=request.user, date__month=current_month, date__year=current_year)
         .values('category')
         .annotate(total_amount=Sum('amount'))
         .order_by('-total_amount')
     )
 
-    # Aggregate by month for monthly trend analysis
-    monthly_summary = (
-        Transaction.objects
-        .filter(user=request.user)  # Фильтр по пользователю
-        .annotate(month=TruncMonth('date'))
-        .values('month')
-        .annotate(total_amount=Sum('amount'))
-        .order_by('month')
-    )
-
-    # Convert querysets to JSON for use in JavaScript charts
-    category_data = json.dumps(list(category_summary), default=str)
-    monthly_data = json.dumps(list(monthly_summary), default=str)
+    total_expenses_for_month = sum(item['total_amount'] for item in monthly_data)
 
     return render(request, 'reports/reports.html', {
-        'category_data': category_data,
-        'monthly_data': monthly_data,
+        'category_data': json.dumps(list(category_summary), default=str),
+        'monthly_data': json.dumps(monthly_data, default=str),
+        'total_expenses_for_month': total_expenses_for_month,
+        'amount_change': total_expenses_for_month,
     })
 
 def index(request):

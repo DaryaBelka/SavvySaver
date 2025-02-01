@@ -3,92 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reports</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Reports - SavvySaver</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* Стили для уменьшения размера графиков */
-        canvas {
-            max-width: 600px; /* Максимальная ширина графика */
-            max-height: 300px; /* Максимальная высота графика */
-            width: 100%; /* Адаптивная ширина */
-            height: auto; /* Автоматическая высота */
+        .chart-container {
+            width: 80%; 
+            max-width: 600px; 
+            margin: 0 auto 30px; 
         }
 
-        /* Дополнительные стили для улучшения внешнего вида */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        header {
+        .App-header {
             margin-bottom: 20px;
         }
+
         h2 {
-            margin-top: 30px;
+            text-align: center;
+            margin-bottom: 15px;
         }
     </style>
 </head>
+
 <body>
-    <header>
-        <h1>Reports</h1>
-        <nav>
+    <header class="App-header">
+        <div class="logo">
+            <img src="{% static 'images/logo.png' %}" alt="SavvySaver Logo">
+            <h1>SavvySaver</h1>
+        </div>
+        <nav class="nav">
             <ul>
                 <li><a href="{% url 'index' %}">Home</a></li>
                 <li><a href="{% url 'transaction_list' %}">Transactions</a></li>
                 <li class="active"><a href="{% url 'reports' %}">Reports</a></li>
+                <li><a href="#">Advice</a></li>
+                {% if user.is_authenticated %}
+                <li class="user-menu">
+                    <a href="#" class="dropdown-toggle">
+                        <i class="fas fa-user"></i>
+                        <span>{{ user.first_name }}</span>
+                    </a>
+                    <ul class="dropdown">
+                        <li><a href="{% url 'update_profile' %}">Update Profile</a></li>
+                        <li><a href="{% url 'logout' %}">Sign out</a></li>
+                    </ul>
+                </li>
+                {% else %}
+                <li><a href="{% url 'login' %}">Login</a></li>
+                {% endif %}
             </ul>
         </nav>
     </header>
 
-    <h2>Expenses by Category</h2>
-    <canvas id="categoryChart"></canvas>
+    <main>
+        <h1>Reports</h1>
 
-    <h2>Monthly Trends</h2>
-    <canvas id="monthlyChart"></canvas>
+        <div class="spent">
+            Spent this month: <strong>{{ total_expenses_for_month }} PLN</strong>
+        </div>
 
-    <script>
-        const categoryData = JSON.parse('{{ category_data|escapejs }}');
-        const monthlyData = JSON.parse('{{ monthly_data|escapejs }}');
+        <h2>Expenses by Category</h2>
+        <div class="chart-container">
+            <canvas id="categoryChart"></canvas>
+        </div>
 
-        const categoryLabels = categoryData.map(item => item.category);
-        const categoryAmounts = categoryData.map(item => item.total_amount);
+        <h2>Monthly Trends</h2>
+        <div class="chart-container">
+            <canvas id="monthlyChart"></canvas>
+        </div>
 
-        const monthlyLabels = monthlyData.map(item => item.month);
-        const monthlyAmounts = monthlyData.map(item => item.total_amount);
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            const categoryData = JSON.parse('{{ category_data|escapejs }}');
+            const monthlyData = JSON.parse('{{ monthly_data|escapejs }}');
 
-        const ctx1 = document.getElementById('categoryChart').getContext('2d');
-        new Chart(ctx1, {
-            type: 'pie',
-            data: {
-                labels: categoryLabels,
-                datasets: [{
-                    label: 'Expenses by Category',
-                    data: categoryAmounts,
-                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false // Позволяет изменять размер без изменения пропорций
-            }
-        });
+            const categoryLabels = categoryData.map(item => item.category);
+            const categoryAmounts = categoryData.map(item => item.total_amount);
 
-        const ctx2 = document.getElementById('monthlyChart').getContext('2d');
-        new Chart(ctx2, {
-            type: 'line',
-            data: {
-                labels: monthlyLabels,
-                datasets: [{
-                    label: 'Monthly Expenses',
-                    data: monthlyAmounts,
-                    borderColor: '#36A2EB',
-                    fill: false,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false // Позволяет изменять размер без изменения пропорций
-            }
-        });
-    </script>
+            const monthlyLabels = monthlyData.map(item => new Date(item.day).getDate().toString()); 
+            const cumulativeAmounts = monthlyData.map(item => item.cumulative_total);
+
+            // "Expenses by Category"
+            const ctx1 = document.getElementById('categoryChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'pie',
+                data: {
+                    labels: categoryLabels,
+                    datasets: [{
+                        label: 'Expenses by Category',
+                        data: categoryAmounts,
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#FF9F40', '#FFCD56'],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // "Monthly Trends"
+            const ctx2 = document.getElementById('monthlyChart').getContext('2d');
+            const gradient = ctx2.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(54, 162, 235, 0.2)');
+            gradient.addColorStop(1, 'rgba(54, 162, 235, 0.8)');
+
+            new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: monthlyLabels,
+                    datasets: [{
+                        label: 'Cumulative Monthly Expenses',
+                        data: cumulativeAmounts,
+                        borderColor: '#36A2EB',
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        },
+                        x: {
+                            ticks: {
+                                autoSkip: false,
+                                maxRotation: 0,
+                                minRotation: 0
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        </script>
+    </main>
+    <script src="{% static 'js/script.js' %}"></script>
 </body>
-</html> 
+
+</html>
