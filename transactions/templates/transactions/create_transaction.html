@@ -30,7 +30,7 @@
         <h2>Upload a file</h2>
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
-            <input type="file" name="file" accept=".csv, .xlsx" required> 
+            <input type="file" name="file" accept=".pdf" required> 
             <button type="submit">Upload</button>
         </form>
 
