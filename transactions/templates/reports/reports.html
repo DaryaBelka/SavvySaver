@@ -36,7 +36,7 @@
                 <li><a href="{% url 'index' %}">Home</a></li>
                 <li><a href="{% url 'transaction_list' %}">Transactions</a></li>
                 <li class="active"><a href="{% url 'reports' %}">Reports</a></li>
-                <li><a href="#">Advice</a></li>
+                <li><a href="{% url 'advice' %}">Advice</a></li>
                 {% if user.is_authenticated %}
                 <li class="user-menu">
                     <a href="#" class="dropdown-toggle">
@@ -59,7 +59,8 @@
         <h1>Reports</h1>
 
         <div class="spent">
-            Spent this month: <strong>{{ total_expenses_for_month }} PLN</strong>
+            Spent this month: <strong>{{ total_expenses_for_month|floatformat:2 }} PLN</strong>
+
         </div>
 
         <h2>Expenses by Category</h2>

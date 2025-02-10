@@ -45,8 +45,7 @@ def login_view(request):
         user = authenticate(request, username=email, password=password)
 
         if user is not None:
-            login(request, user)
-            messages.success(request, 'Login successful.')
+            login(request, user)      
             return redirect('index')
         else:
             messages.error(request, 'Invalid email or password.')
@@ -56,7 +55,10 @@ def login_view(request):
 
 def logout_view(request):
     logout(request)
-    messages.success(request, 'You have been logged out.')
+
+    storage = messages.get_messages(request)
+    storage.used = True  
+
     return redirect('index')
 
 @login_required

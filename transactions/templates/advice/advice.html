@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Advice</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <header class="App-header">
+        <div class="logo">
+            <img src="{% static 'images/logo.png' %}" alt="SavvySaver Logo">
+            <h1>SavvySaver</h1>
+        </div>
+        <nav class="nav">
+            <ul>
+                <li><a href="{% url 'index' %}">Home</a></li>
+                <li><a href="{% url 'transaction_list' %}">Transactions</a></li>
+                <li><a href="{% url 'reports' %}">Reports</a></li>
+                <li class="active"><a href="{% url 'advice' %}">Advice</a></li>
+                <li><a href="{% url 'login' %}">Login</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Financial Goal:</h2>
+
+        <form method="POST">
+            {% csrf_token %}
+            <label for="goal_name">Goal Name:</label>
+            <input id="goal_name" type="text" name="goal_name" value="{{ goal.goal_name }}">
+            
+            <label for="target_amount">Target Amount:</label>
+            <input id="target_amount" type="number" name="target_amount" value="{{ goal.target_amount }}" min="0" step="0.01">
+            
+            <button type="submit" name="update_goal">Save Goal</button>
+        </form>
+
+        <h3>Current Progress</h3>
+        <canvas id="progressChart" data-progress="{{ progress|floatformat:2 }}" width="200" height="200"></canvas>
+        <p>You have saved {{ goal.saved_amount }} out of {{ goal.target_amount }} ({{ progress|floatformat:2 }}%)</p>
+
+        <form method="POST" id="addSavingsForm">
+            {% csrf_token %}
+            <label for="savings">Add Amount:</label>
+            <input id="savings" type="number" name="savings" step="0.01" min="0">
+            <button type="submit" name="add_savings">Add</button>
+        </form>
+        
+        <form method="POST" id="withdrawSavingsForm">
+            {% csrf_token %}
+            <label for="withdrawal">Withdraw Amount:</label>
+            <input id="withdrawal" type="number" name="withdrawal" step="0.01" min="0">
+            <button type="submit" name="withdraw_savings">Withdraw</button>
+        </form>
+
+        <h3>Daily Advice:</h3>
+        <p>{{ advice }}</p>
+    </main>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var canvas = document.getElementById('progressChart');
+            var ctx = canvas.getContext('2d');
+            var progress = parseFloat(canvas.dataset.progress) || 0;
+
+            var chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [progress, 100 - progress],
+                        backgroundColor: ['#4CAF50', '#ddd']
+                    }],
+                    labels: ['Achieved', 'Remaining']
+                },
+                options: {
+                    cutout: '70%',
+                    responsive: false,
+                    maintainAspectRatio: false
+                }
+            });
+        
+            document.getElementById("addSavingsForm").addEventListener("submit", function(event) {
+                var savingsInput = document.getElementById("savings");
+                var savingsValue = parseFloat(savingsInput.value);
+                var targetAmount = parseFloat("{{ goal.target_amount|floatformat:2 }}");
+                var savedAmount = parseFloat("{{ goal.saved_amount|floatformat:2 }}");
+                var remainingAmount = targetAmount - savedAmount;
+
+                if (savingsValue > remainingAmount) {
+                    event.preventDefault(); 
+                    alert("You can only add up to " + remainingAmount.toFixed(2) + " PLN.");
+                    savingsInput.value = ""; 
+                }
+            });
+
+            document.getElementById("withdrawSavingsForm").addEventListener("submit", function(event) {
+                var withdrawalInput = document.getElementById("withdrawal");
+                var withdrawalValue = parseFloat(withdrawalInput.value);
+                var savedAmount = parseFloat("{{ goal.saved_amount|floatformat:2 }}");
+
+                if (withdrawalValue > savedAmount) {
+                    event.preventDefault(); 
+                    alert("You can only withdraw up to " + savedAmount.toFixed(2) + " PLN.");
+                    withdrawalInput.value = ""; 
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

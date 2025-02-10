@@ -9,8 +9,10 @@ from django.core.files.storage import FileSystemStorage
 from django.db.models import Sum
 from django.db.models.functions import Trunc
 from django.contrib.auth.decorators import login_required
-from .models import Transaction
+from .models import Transaction, FinancialGoal
 from .forms import TransactionForm
+from decimal import Decimal
+from django.contrib import messages
 import logging
 
 logger = logging.getLogger(__name__)
@@ -141,7 +143,6 @@ def identify_bank(text):
     else:
         return "unknown"
 
-    
 def sanitize_pdf_text(text):     # delete "NUMER RACHUNKU ODBIORCY" and "TYTUŁ" in Santander.
     text = re.sub(r'NUMER RACHUNKU ODBIORCY\s+[\d\s\-]+', '', text)
     text = re.sub(r'TYTUŁ\s+', '', text)
@@ -361,10 +362,10 @@ def classify_transaction(title):
     ]
     utilities_keywords = [
         "energa", "tauron", "pgnig", "veolia", "opłata", "czynsz", "gaz", "prąd", 
-        "woda", "internet", "abonament", "telefon", "tv", "play", "orange", "t-mobile", "plus"
+        "woda", "internet", "abonament", "tv", "play", "orange", "t-mobile", "plus"
     ]
     cash_keywords = [
-        "bankomat", "wypłata", "gotówka", "pobrano", "przelew na konto", "cash", "wpłatomat"
+        "bankomat", "wypłata", "gotówka", "pobrano", "cash", "wpłatomat"
     ]
     transfers_keywords = [
         "przelew", "blik", "zwrot", "rachunek", "transakcja", "płatność", "opłata bankowa", "przekaz", "oddo"
@@ -373,21 +374,20 @@ def classify_transaction(title):
     if any(word in title for word in transport_keywords):
         return "transport"
     if any(word in title for word in restaurants_keywords):
-        return "restauracje"
+        return "restaurants"
     if any(word in title for word in health_keywords):
-        return "zdrowie"
+        return "health"
     if any(word in title for word in groceries_keywords):
-        return "spozywcze"
+        return "groceries"
     if any(word in title for word in shopping_keywords):
-        return "zakupy"
+        return "shopping"
     if any(word in title for word in utilities_keywords):
         return "media"
     if any(word in title for word in cash_keywords):
-        return "gotówka"
+        return "cash"
     if any(word in title for word in transfers_keywords):
-        return "przelewy"
-
-    return "ogólne"
+        return "transfers"
+    return "general"
 
 @login_required
 def reports_view(request):
@@ -421,8 +421,107 @@ def reports_view(request):
     return render(request, 'reports/reports.html', {
         'category_data': json.dumps(list(category_summary), default=str),
         'monthly_data': json.dumps(monthly_data, default=str),
-        'total_expenses_for_month': total_expenses_for_month,
-        'amount_change': total_expenses_for_month,
+        'total_expenses_for_month': round(total_expenses_for_month, 2),
+        'amount_change': round(total_expenses_for_month, 2),
+    })
+
+ADVICE_LIST = [
+    "Save a small amount today - it's a step towards your big goal!",
+    "Avoid unnecessary purchases – your goal is worth it!",
+    "Plan your budget for the week – tracking expenses helps you reach your goal faster.",
+    "Follow the 24-hour rule before making big purchases – you might not need it!",
+    "Make coffee at home instead of buying it every day – the savings add up!",
+    "Avoid impulse buying – always make a shopping list and stick to it.",
+    "Review your subscriptions – cancel any you don't use.",
+    "Cook meals at home instead of eating out – it's healthier and cheaper.",
+    "Compare prices online before making purchases to find the best deals.",
+    "Set a weekly spending limit and challenge yourself to stick to it.",
+    "Track your expenses daily to stay aware of your spending habits.",
+    "Avoid shopping when you're bored – it often leads to unnecessary spending.",
+    "Turn off lights and appliances when not in use to save on electricity.",
+    "Plan your grocery shopping around discounts and deals.",
+    "Create a wishlist for big purchases and revisit it after a month.",
+    "Borrow or rent items you rarely need instead of buying them.",
+    "Review your financial goals regularly to stay motivated and adjust as needed.",
+    "Avoid online shopping late at night when decision-making is less rational.",
+    "Pay your bills on time to avoid late fees and extra charges.",
+    "Track your impulse purchases and review them monthly to see how much you could save.",
+    "Use cash instead of cards for daily expenses – it helps control spending better.",
+    "Buy seasonal items off-season (e.g., winter clothes in summer) to get better deals.",
+    "Avoid lifestyle inflation – don’t increase spending just because you earn more.",
+    "Review and cancel automatic payments for unused apps, memberships, or services.",
+    "Try the 50/30/20 budgeting rule: 50% for needs, 30% for wants, 20% for savings.",
+    "Invest in quality over quantity – durable items save money in the long run.",
+    "Set up separate bank accounts for savings, bills, and daily spending.",
+    "Learn basic financial literacy – read books or follow reliable financial blogs.",
+    "Instead of buying new clothes often, try mix-and-match outfits to refresh your style.",
+    "Use cashback and rewards programs wisely, but avoid overspending to earn points.",
+    "Always compare prices from different stores before making a purchase.",
+]
+
+@login_required
+def advice_view(request):
+    user = request.user
+    goal, created = FinancialGoal.objects.get_or_create(
+        user=user,
+        defaults={'goal_name': "New Goal", 'target_amount': Decimal('1000.00'), 'saved_amount': Decimal('0.00')}
+    )
+
+    if created:
+        messages.info(request, "A new financial goal has been created for you!")
+
+    if request.method == 'POST':
+        if 'update_goal' in request.POST:
+            new_goal_name = request.POST.get('goal_name', goal.goal_name)
+            new_target_amount = request.POST.get('target_amount')
+
+            try:
+                new_target_amount = Decimal(new_target_amount) if new_target_amount else goal.target_amount
+            except ValueError:
+                new_target_amount = goal.target_amount
+
+            if goal.goal_name != new_goal_name or goal.target_amount != new_target_amount:
+                goal.saved_amount = Decimal('0.00')
+
+            goal.goal_name = new_goal_name
+            goal.target_amount = new_target_amount
+            goal.save()
+
+        elif 'add_savings' in request.POST:
+            savings = request.POST.get('savings')
+            try:
+                additional_savings = Decimal(savings) if savings else Decimal('0.00')
+                remaining_amount = goal.target_amount - goal.saved_amount
+
+                if additional_savings > 0 and additional_savings <= remaining_amount:
+                    goal.saved_amount += additional_savings
+                    goal.save()
+            except ValueError:
+                pass
+
+        elif 'withdraw_savings' in request.POST:
+            withdrawal = request.POST.get('withdrawal')
+            try:
+                withdrawal_amount = Decimal(withdrawal) if withdrawal else Decimal('0.00')
+                if withdrawal_amount > 0 and withdrawal_amount <= goal.saved_amount:
+                    goal.saved_amount -= withdrawal_amount
+                    goal.save()
+            except ValueError:
+                pass
+
+    progress = goal.progress_percentage() if goal.target_amount > Decimal('0.00') else Decimal('0.00')
+
+    today_day = datetime.today().day
+
+    if today_day <= len(ADVICE_LIST):
+        daily_advice = ADVICE_LIST[today_day - 1] 
+    else:
+        daily_advice = ADVICE_LIST[-1]   
+
+    return render(request, 'advice/advice.html', {
+        'goal': goal,
+        'progress': float(progress),
+        'advice': daily_advice,
     })
 
 def index(request):

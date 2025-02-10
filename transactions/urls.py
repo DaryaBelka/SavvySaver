@@ -5,8 +5,8 @@ from .views import (
     create_transaction,
     edit_transaction,
     delete_transaction,
-    reports_view
- 
+    reports_view,
+    advice_view
 )
 
 urlpatterns = [
@@ -16,4 +16,5 @@ urlpatterns = [
     path('transactions/edit/<int:id>/', edit_transaction, name='edit_transaction'),
     path('transactions/delete/<int:id>/', delete_transaction, name='delete_transaction'),
     path('reports/', reports_view, name='reports'), 
+    path('advice/', advice_view, name='advice'),
 ]

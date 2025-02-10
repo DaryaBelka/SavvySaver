@@ -24,7 +24,7 @@
                 <li><a href="{% url 'index' %}">Home</a></li>
                 <li class="active"><a href="{% url 'transaction_list' %}">Transactions</a></li> 
                 <li><a href="{% url 'reports' %}">Reports</a></li>
-                <li><a href="#">Advice</a></li>
+                <li><a href="{% url 'advice' %}">Advice</a></li>
                 <li><a href="{% url 'login' %}">Login</a></li>
             </ul>
         </nav>
@@ -39,15 +39,15 @@
         <h2>Filter by category:</h2>
         <ul>
             <li><a href="?category=all">All</a></li>
-            <li><a href="?category=przelewy">Przelewy</a></li>
-            <li><a href="?category=spozywcze">Spożywcze</a></li>
-            <li><a href="?category=zakupy">Zakupy</a></li>
-            <li><a href="?category=zdrowie">Zdrowie</a></li>
-            <li><a href="?category=restauracje">Restauracje</a></li>
+            <li><a href="?category=transfers">Transfers</a></li>
+            <li><a href="?category=groceries">Groceries</a></li>
+            <li><a href="?category=shopping">Shopping</a></li>
+            <li><a href="?category=health">Health</a></li>
+            <li><a href="?category=restaurants">Restaurants</a></li>
             <li><a href="?category=transport">Transport</a></li>
-            <li><a href="?category=ogolne">Ogólne</a></li>
+            <li><a href="?category=general">General</a></li>
             <li><a href="?category=media">Media</a></li>
-            <li><a href="?category=gotowka">Gotówka</a></li>
+            <li><a href="?category=cash">Cash</a></li>
         </ul>
 
         <h2>Filter by date:</h2>
